@@ -637,7 +637,6 @@ function Result({
   ranked,
   top,
   second,
-  scores,
   comboLabel,
   profile,
   onRetry,
