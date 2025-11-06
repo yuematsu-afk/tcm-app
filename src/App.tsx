@@ -217,7 +217,11 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
   }, [answers]);
 
-  const handleSelect = (id: number, value: number) => setAnswers((prev) => ({ ...prev, [id]: value }));
+  useEffect(() => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
+  const handleSelect = (id: number, value: number | undefined) => setAnswers((prev) => ({ ...prev, [id]: value }));
 
   const resetAll = () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -332,9 +336,6 @@ function Intro({ onStart }: { onStart: () => void }) {
             <button onClick={onStart} className="px-4 py-3 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow">
               診断をはじめる
             </button>
-            <button onClick={onStart} className="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 border">
-              すぐに質問へ
-            </button>
           </div>
         </div>
         <div className="w-full md:w-64 shrink-0">
@@ -355,56 +356,121 @@ function Quiz({
   onFinish,
 }: {
   answers: Record<number, number | undefined>;
-  onSelect: (id: number, value: number) => void;
+  onSelect: (id: number, value: number | undefined) => void;
   onFinish: () => void;
 }) {
   const total = QUESTIONS.length;
   const answeredCount = Object.keys(answers).filter((k) => answers[Number(k)] !== undefined).length;
   const pageSize = 8;
+  const OPTIONALS = new Set<number>([12, 20, 26]); // ← Q12,20,26を任意にする
+  const [showError, setShowError] = useState(false); // 未回答エラーの表示フラグ
+
   const [page, setPage] = useState(0); // 0-3
   const start = page * pageSize;
   const currentQs = QUESTIONS.slice(start, start + pageSize);
   const isLast = page === Math.floor((total - 1) / pageSize);
 
-  const canNext = currentQs.every((q) => answers[q.id] !== undefined);
+  const canNext = currentQs.every((q) => OPTIONALS.has(q.id) || answers[q.id] !== undefined);
 
-  const goNext = () => {
-    if (!canNext) return;
-    if (isLast) onFinish();
-    else setPage(page + 1);
-  };
+  // すべて埋まったら自動でエラー表示をOFF
+  useEffect(() => {
+    const ok = currentQs.every((q) => OPTIONALS.has(q.id) || answers[q.id] !== undefined);
+    if (ok && showError) setShowError(false);
+  }, [answers, page]); // currentQsはpageに依存するのでこれでOK
+
+
+ const goNext = () => {
+  if (!canNext) {
+    setShowError(true);
+
+    // 最初の未回答IDを探す
+    const firstMissingId = currentQs.find(
+      (q) => !OPTIONALS.has(q.id) && answers[q.id] === undefined
+    )?.id;
+
+    // 未回答カードにスムーズスクロール（見つからなければページ先頭）
+    if (firstMissingId) {
+      const el = document.querySelector(`[data-qid="${firstMissingId}"]`);
+      (el as HTMLElement | null)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    return;
+  }
+
+  setShowError(false);
+
+  if (isLast) {
+    onFinish();
+  } else {
+    setPage(page + 1);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+  }
+ };
+
   const goPrev = () => setPage((p) => Math.max(0, p - 1));
+
+  useEffect(() => {
+  // ページが変わったら先頭へ（instantでもOK。好みで'smooth'に）
+  window.scrollTo({ top: 0, behavior: "auto" });
+  }, [page]);
 
   return (
     <div id="questions" className="space-y-6">
-      {currentQs.map((q, idx) => (
-        <div key={q.id} className="bg-white rounded-2xl shadow p-5">
-          <div className="flex items-start justify-between gap-4">
+      {currentQs.map((q, idx) => {
+        const missing = showError && !OPTIONALS.has(q.id) && answers[q.id] === undefined;
+        return (
+          <div
+            key={q.id}
+            data-qid={q.id}
+            aria-invalid={missing || undefined}
+            className={
+              "bg-white rounded-2xl shadow p-5 border " +
+              (missing ? "border-rose-300" : "border-transparent")
+            }
+          >
+            <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-xs text-slate-500">Q{start + idx + 1}</div>
+              <div className="text-xs text-slate-500">
+                Q{start + idx + 1}
+                {OPTIONALS.has(q.id) && <span className="ml-2 text-rose-500">(任意)</span>}
+              </div>
               <div className="font-medium mb-2">{q.text}</div>
               <div className="flex flex-wrap gap-2">
-                {LIKERT.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => onSelect(q.id, opt.value)}
-                    className={
-                      "px-3 py-2 rounded-xl border text-sm " +
-                      (answers[q.id] === opt.value
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : "bg-white hover:bg-slate-50")
-                    }
-                    aria-pressed={answers[q.id] === opt.value}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              {/* ← ここに既存の LIKERT.map のボタン群（そのまま） */}
+              {LIKERT.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    // ★ 追加：同じ値をもう一度押したら未選択（undefined）に戻す
+                    const current = answers[q.id];
+                    const next = current === opt.value ? undefined : opt.value;
+                    onSelect(q.id, next);
+                  }}
+                  className={
+                    "px-3 py-2 rounded-xl border text-sm " +
+                    (answers[q.id] === opt.value
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white hover:bg-slate-50")
+                  } 
+                  aria-pressed={answers[q.id] === opt.value}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <Badge constitutionKey={q.key} />
+          </div>
+          <Badge constitutionKey={q.key} />
           </div>
         </div>
-      ))}
+      );
+      })}
+
+      {showError && !canNext && (
+        <div className="text-rose-600 text-sm -mt-2 mb-2" role="alert">
+         すべてに回答してください（※ Q12は任意）
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <button
@@ -423,9 +489,9 @@ function Quiz({
 
         <button
           onClick={goNext}
-          disabled={!canNext}
+          // disabled={!canNext}
           className={`px-5 py-3 rounded-xl shadow text-white ${
-            !canNext ? "bg-slate-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
+            !canNext ? "bg-slate-300" : "bg-indigo-600 hover:bg-indigo-700"
           }`}
         >
           {isLast ? "結果を見る" : "次へ"}
