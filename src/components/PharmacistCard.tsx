@@ -1,4 +1,3 @@
-import React from "react";
 import { CONSTITUTION_COLOR, tagToLabel } from "../ui/constitution";
 
 export type Pharmacist = {

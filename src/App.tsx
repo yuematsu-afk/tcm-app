@@ -65,12 +65,6 @@ function trackEvent(name: string, params: Record<string, any> = {}) {
   } catch {}
 }
 
-/** URLSearchParams 簡易ラッパ */
-function params() {
-  return typeof window === "undefined"
-  ? new URLSearchParams()
-  : new URLSearchParams(window.location.search);
-}
 
 /** クリップボード（フォールバック付き） */
 function hasClipboardAPI() {

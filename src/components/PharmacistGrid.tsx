@@ -1,5 +1,5 @@
 // src/components/PharmacistGrid.tsx
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import PharmacistCard from "./PharmacistCard";
 import type { Pharmacist } from "../data/pharmacists";
 
