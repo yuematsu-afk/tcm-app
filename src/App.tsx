@@ -145,6 +145,18 @@ export default function App() {
   const top = ranked[0]; const second = ranked[1];
   const comboLabel = `${top?.name ?? ""} × ${second?.name ?? ""}`;
 
+  // 結果画面が表示されたら GA4 に result_view を送る
+  useEffect(() => {
+    if (step === 2 && top && second) {
+      trackEvent("result_view", {
+        top1: top.key,
+        top2: second.key,
+        comboLabel,
+        scores, // { qixu: number, ... } をそのまま渡します
+      });
+    }
+  }, [step, top, second, comboLabel, scores]);
+    
   // dev self-test（省略：必要なら以前のまま入れてOK）
 
   return (

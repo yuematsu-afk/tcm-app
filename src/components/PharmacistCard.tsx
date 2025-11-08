@@ -16,7 +16,8 @@ export type Pharmacist = {
 type Props = { data: Pharmacist };
 
 export default function PharmacistCard({ data }: Props) {
-  const { name, photo, url, tags = [], langs = [], titles = [], area, bio } = data;
+  const { id, name, photo, url, tags = [], langs = [], titles = [], area, bio } = data;
+
 
   return (
     <article
@@ -109,6 +110,15 @@ export default function PharmacistCard({ data }: Props) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              (window as any).dataLayer?.push({
+                event: "detail_click",
+                id,      // ← ここは data.id と明示
+                name,
+                url,
+                from: "pharmacist_card",
+              });
+            }}
             className="
               inline-flex items-center justify-center w-full
               rounded-xl bg-emerald-600 text-white text-sm font-medium
