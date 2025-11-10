@@ -151,8 +151,6 @@ export default function App() {
   const handleSelect = (id: number, value: number) =>
     setAnswers((prev) => ({ ...prev, [id]: prev[id] === value ? undefined : value })); // ←再タップで非選択の仕様は維持
 
-  const resetAll = () => { localStorage.removeItem(STORAGE_KEY); setAnswers({}); setStep(0); setEntry({}); };
-
   // スコア計算
   const scores = useMemo(() => {
     const base: Record<ConstitutionKey, number> = {
