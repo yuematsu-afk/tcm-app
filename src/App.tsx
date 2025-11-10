@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import PharmacistGrid from "./components/PharmacistGrid";
-import PharmacistCard from "./components/PharmacistCard";
+import PharmacistCard, { type Pharmacist } from "./components/PharmacistCard";
 import { PHARMACISTS } from "./data/pharmacists";
 import { QUESTIONS_FEMALE, QUESTIONS_MALE, type Question32, type ConstitutionKey } from "./questions32";
 
@@ -54,6 +54,33 @@ const LIKERT = [
   { value: 3, label: "よくある" },
   { value: 4, label: "ほぼ常に" },
 ] as const;
+
+// === 診断結果サンプル用（Entry画面で使用） ==================
+
+const SAMPLE_RANKED = [
+  { name: "気虚", score: 12 },
+  { name: "血虚", score: 10 },
+  { name: "陰虚", score: 6 },
+  { name: "気滞", score: 4 },
+  { name: "湿熱", score: 3 },
+  { name: "血瘀", score: 2 },
+  { name: "湿痰", score: 1 },
+];
+
+const SAMPLE_PHARMACISTS: Pharmacist[] = [
+  {
+    id: "sample-nakamura",
+    name: "中村 幸子（なかむら ゆきこ）",
+    titles: ["薬剤師"],
+    area: "愛知・オンライン相談可",
+    langs: ["日本語"],
+    tags: ["qixu", "xuexu"],
+    bio: "女性の一生に寄り添う漢方相談。冷え・不妊・睡眠・更年期など、体質から整えるサポートを行っています。",
+    // photo を省略すると placeholder が表示される仕様
+    url: "https://hito-yaku.com/"  // 実サイトに合わせてあとで差し替えOK
+  },
+];
+
 
 /** GA / GTM 簡易ラッパ */
 function trackEvent(name: string, params: Record<string, any> = {}) {
@@ -163,7 +190,7 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900">
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
         <header className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold">漢方の体質診断（32問・性別/年齢対応）</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">漢方の体質診断（性別/年齢対応）</h1>
           <div className="hidden md:flex items-center gap-3">
             <button onClick={resetAll} className="px-3 py-2 text-sm rounded-xl bg-white shadow border hover:bg-slate-50">リセット</button>
             <button onClick={() => window.print()} className="px-3 py-2 text-sm rounded-xl bg-white shadow border hover:bg-slate-50">印刷/保存</button>
@@ -218,7 +245,6 @@ export default function App() {
   );
 }
 
-/** === 性別＋年齢の入口 =============================== */
 function Entry({
   entry, onChange, onStart,
 }: {
@@ -238,43 +264,143 @@ function Entry({
   const ready = !!entry.gender && !!entry.age;
 
   return (
-    <div className="bg-white/80 backdrop-blur rounded-2xl shadow p-6 md:p-8">
-      <h2 className="text-xl font-semibold mb-4">まずは性別と年代を選択してください</h2>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <div className="text-sm text-slate-600 mb-2">性別</div>
-          <div className="flex gap-3">
-            <button
-              className={`px-4 py-3 rounded-xl border ${entry.gender==="female" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-slate-50"}`}
-              onClick={() => onChange({ ...entry, gender: "female" })}
-            >女性</button>
-            <button
-              className={`px-4 py-3 rounded-xl border ${entry.gender==="male" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-slate-50"}`}
-              onClick={() => onChange({ ...entry, gender: "male" })}
-            >男性</button>
+    <div className="space-y-8">
+      {/* 1. ヒーロー＆性別・年代選択ブロック */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl shadow p-6 md:p-8">
+        <h2 className="text-xl md:text-2xl font-semibold mb-2">
+          3分でわかる、あなたの「漢方体質」
+        </h2>
+        <p className="text-sm md:text-base text-slate-600 mb-6">
+          薬剤師監修のセルフチェックです。体質タイプとセルフケアのヒント、あなたに合いそうな薬剤師を表示します。
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* 性別 */}
+          <div>
+            <div className="text-sm text-slate-600 mb-2">性別</div>
+            <div className="flex gap-3">
+              <button
+                className={`px-4 py-3 rounded-xl border ${entry.gender==="female" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-slate-50"}`}
+                onClick={() => onChange({ ...entry, gender: "female" })}
+              >
+                女性
+              </button>
+              <button
+                className={`px-4 py-3 rounded-xl border ${entry.gender==="male" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-slate-50"}`}
+                onClick={() => onChange({ ...entry, gender: "male" })}
+              >
+                男性
+              </button>
+            </div>
+          </div>
+
+          {/* 年代 */}
+          <div>
+            <div className="text-sm text-slate-600 mb-2">年代</div>
+            <div className="flex flex-wrap gap-2">
+              {ageBands.map(a => (
+                <button
+                  key={a.key}
+                  className={`px-3 py-2 rounded-xl border text-sm ${entry.age===a.key ? "bg-slate-900 text-white border-slate-900" : "bg-white hover:bg-slate-50"}`}
+                  onClick={() => onChange({ ...entry, age: a.key })}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        <div>
-          <div className="text-sm text-slate-600 mb-2">年代</div>
-          <div className="flex flex-wrap gap-2">
-            {ageBands.map(a => (
-              <button
-                key={a.key}
-                className={`px-3 py-2 rounded-xl border text-sm ${entry.age===a.key ? "bg-slate-900 text-white border-slate-900" : "bg-white hover:bg-slate-50"}`}
-                onClick={() => onChange({ ...entry, age: a.key })}
-              >{a.label}</button>
-            ))}
+
+        {/* メインCTA */}
+        <div className="mt-6">
+          <button
+            onClick={() => {
+              if (!ready) return;
+              trackEvent("start_quiz", { gender: entry.gender, age: entry.age });
+              onStart();
+            }}
+            disabled={!ready}
+            className={`w-full md:w-auto px-5 py-3 rounded-xl shadow text-white font-medium ${
+              ready ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-300 cursor-not-allowed"
+            }`}
+          >
+            今すぐ診断をはじめる（無料）
+          </button>
+          <p className="mt-2 text-xs text-slate-500">
+            ※ 所要時間の目安：2〜3分。
+          </p>
+        </div>
+      </div>
+
+      {/* 2. 診断結果のサンプル（レーダーチャート） */}
+      <div className="bg-white rounded-2xl shadow p-6 md:p-7">
+        <h3 className="text-lg font-semibold text-slate-900 mb-1">
+          診断結果サンプル
+        </h3>
+        <p className="text-sm text-slate-600 mb-4">
+          実際の結果画面では、あなたの体質バランスをこのようなグラフとコメントで表示します。
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-6 items-center">
+          <div>
+            <div className="text-xs text-slate-500 mb-1">体質タイプ（例）</div>
+            <div className="text-xl font-bold mb-2">気虚 × 血虚 タイプ</div>
+            <p className="text-sm text-slate-700">
+              胃腸が弱く疲れやすく、血の不足で乾燥やめまいが出やすいタイプのイメージです。
+              実際の診断では、あなたの回答に合わせて説明とセルフケアのヒントが変わります。
+            </p>
+          </div>
+
+          <div>
+            {/* 既存のレーダーチャートコンポーネントを使ってサンプル表示 */}
+            <RadarChartComponent data={SAMPLE_RANKED} />
           </div>
         </div>
       </div>
-      <div className="mt-6">
+
+      {/* 3. 薬剤師カードのサンプル */}
+      <div className="bg-white rounded-2xl shadow p-6 md:p-7">
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          診断後は、あなたに合いそうな薬剤師をご紹介します
+        </h3>
+        <p className="text-sm text-slate-600 mb-4">
+          体質タイプやお悩みに合わせて、オンライン相談が可能な薬剤師・登録販売者をピックアップします。
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {SAMPLE_PHARMACISTS.map((p) => (
+            <PharmacistCard key={p.id} data={p} />
+          ))}
+        </div>
+
+        <p className="mt-3 text-xs text-slate-500">
+          ※ 上記はサンプルです。実際の画面では、診断結果に基づいて候補が変わります。
+        </p>
+      </div>
+
+      {/* 4. 最後の後押しCTA */}
+      <div className="text-center">
+        <p className="text-sm text-slate-700 mb-3">
+          あなた専用の体質バランスを知って、今日からのセルフケアに役立ててみませんか？
+        </p>
         <button
-          onClick={() => { if (!ready) return; trackEvent("start_quiz", { gender: entry.gender, age: entry.age }); onStart(); }}
+          onClick={() => {
+            if (!ready) return;
+            trackEvent("start_quiz", { gender: entry.gender, age: entry.age, from: "bottom_cta" });
+            onStart();
+          }}
           disabled={!ready}
-          className={`px-5 py-3 rounded-xl shadow text-white ${ready ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-300 cursor-not-allowed"}`}
+          className={`px-6 py-3 rounded-xl shadow text-white font-medium ${
+            ready ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-300 cursor-not-allowed"
+          }`}
         >
           診断をはじめる
         </button>
+        {!ready && (
+          <p className="mt-2 text-xs text-rose-500">
+            先に「性別」と「年代」を選択してください。
+          </p>
+        )}
       </div>
     </div>
   );
