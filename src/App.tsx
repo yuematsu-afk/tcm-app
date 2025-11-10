@@ -187,14 +187,20 @@ export default function App() {
   // dev self-test（省略：必要なら以前のまま入れてOK）
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6">
-        <header className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold">漢方の体質診断（性別/年齢対応）</h1>
-          <div className="hidden md:flex items-center gap-3">
-            <button onClick={resetAll} className="px-3 py-2 text-sm rounded-xl bg-white shadow border hover:bg-slate-50">リセット</button>
-            <button onClick={() => window.print()} className="px-3 py-2 text-sm rounded-xl bg-white shadow border hover:bg-slate-50">印刷/保存</button>
+    <div className="min-h-screen bg-[#FFF7F0] text-slate-900">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <header className="mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-medium mb-3">
+            ヒトヤク 監修
           </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 mb-3">
+            あなたの「漢方体質」をチェックしてみませんか？
+          </h1>
+          <p className="text-sm md:text-base text-slate-600 max-w-2xl">
+            hito-yaku.comで漢方相談を行う薬剤師・登録販売者が監修した、
+            8タイプの漢方体質チェックです。所要時間は約3〜5分。
+            結果から、そのまま専門家に無料相談もできます。
+          </p>
         </header>
 
         {/* 進捗 */}
@@ -266,7 +272,7 @@ function Entry({
   return (
     <div className="space-y-8">
       {/* 1. ヒーロー＆性別・年代選択ブロック */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl shadow p-6 md:p-8">
+      <div className="bg-white rounded-3xl shadow-lg shadow-emerald-100/50 border border-emerald-50 p-6 md:p-8">
         <h2 className="text-xl md:text-2xl font-semibold mb-2">
           3分でわかる、あなたの「漢方体質」
         </h2>
@@ -280,7 +286,11 @@ function Entry({
             <div className="text-sm text-slate-600 mb-2">性別</div>
             <div className="flex gap-3">
               <button
-                className={`px-4 py-3 rounded-xl border ${entry.gender==="female" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-slate-50"}`}
+                className={`px-4 py-3 rounded-full border text-sm font-medium ${
+                  entry.gender==="female"
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50"
+                }`}
                 onClick={() => onChange({ ...entry, gender: "female" })}
               >
                 女性
@@ -386,12 +396,14 @@ function Entry({
         <button
           onClick={() => {
             if (!ready) return;
-            trackEvent("start_quiz", { gender: entry.gender, age: entry.age, from: "bottom_cta" });
+            trackEvent("start_quiz", { gender: entry.gender, age: entry.age });
             onStart();
           }}
           disabled={!ready}
-          className={`px-6 py-3 rounded-xl shadow text-white font-medium ${
-            ready ? "bg-indigo-600 hover:bg-indigo-700" : "bg-slate-300 cursor-not-allowed"
+          className={`inline-flex items-center justify-center px-5 py-3 rounded-full text-sm font-medium shadow-sm ${
+            ready
+              ? "bg-emerald-600 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+              : "bg-slate-300 text-white cursor-not-allowed"
           }`}
         >
           診断をはじめる
@@ -448,7 +460,12 @@ function Quiz({
         const missing = showError && !q.optional && answers[q.id] === undefined;
         const c = CONSTITUTIONS.find((x) => x.key === q.key);
         return (
-          <div key={q.id} className={`bg-white rounded-2xl shadow p-5 border ${missing ? "border-rose-300" : "border-transparent"}`}>
+          <div
+            key={q.id}
+            className={`bg-white rounded-2xl p-5 border ${
+              missing ? "border-rose-300 shadow-sm" : "border-slate-100 hover:border-emerald-200 hover:shadow-md"
+            } transition`}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs text-slate-500">
@@ -460,7 +477,11 @@ function Quiz({
                     <button
                       key={opt.value}
                       onClick={() => onSelect(q.id, opt.value)}
-                      className={`px-3 py-2 rounded-xl border text-sm ${answers[q.id] === opt.value ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-slate-50"}`}
+                      className={`px-3 py-2 rounded-full border text-sm ${
+                        answers[q.id] === opt.value
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50"
+                      }`}
                       aria-pressed={answers[q.id] === opt.value}
                     >
                       {opt.label}
@@ -521,8 +542,13 @@ function Result({
   
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow p-6">
-        <h3 className="text-xl font-semibold mb-4">結果</h3>
+      <div className="bg-white rounded-3xl shadow-lg shadow-emerald-100/50 border border-emerald-50 p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-6 w-1.5 rounded-full bg-emerald-500" />
+          <h3 className="text-lg md:text-xl font-semibold text-slate-900">
+            あなたの漢方体質タイプ
+          </h3>
+        </div>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-4">
             <div className="rounded-2xl p-5 border bg-white">
@@ -535,7 +561,7 @@ function Result({
                 <a
                   href={APPOINTMENT_URL} target="_blank" rel="noopener noreferrer"
                   onClick={() => trackEvent("consult_click", { location: "result_header", top1: top?.key, top2: second?.key })}
-                  className="w-full sm:w-auto px-4 py-3 rounded-xl text-center text-white bg-emerald-600 hover:bg-emerald-700 shadow inline-flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-4 py-3 rounded-full text-center text-white bg-emerald-600 hover:bg-emerald-700 shadow inline-flex items-center justify-center gap-2"
                 >
                   無料で専門家に相談
                 </a>
@@ -567,10 +593,16 @@ function Result({
         <p className="text-xs text-slate-500 mt-3">※ 各タイプは最大16点（4点×4問）。高いほど該当傾向が強いことを示します。</p>
         <div className="mt-4">
           <a
-            href={APPOINTMENT_URL} target="_blank" rel="noopener noreferrer"
-            onClick={() => trackEvent("consult_click", { location: "score_section", top1: top?.key, top2: second?.key })}
-            className="block w-full px-4 py-3 rounded-xl text-center text-white bg-emerald-600 hover:bg-emerald-700 shadow"
-          >漢方の専門家に無料相談する</a>
+            href={APPOINTMENT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() =>
+              trackEvent("consult_click", { location: "score_section", top1: top?.key, top2: second?.key })
+            }
+            className="inline-flex items-center justify-center w-full px-5 py-3 rounded-full bg-emerald-600 text-white text-sm font-medium shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+          >
+            漢方の専門家に無料相談する
+          </a>
         </div>
       </div>
 
@@ -592,10 +624,16 @@ function Result({
       <div className="fixed inset-x-0 bottom-0 md:hidden pointer-events-none">
         <div className="p-3 pb-[calc(env(safe-area-inset-bottom,0)+12px)]">
           <a
-            href={APPOINTMENT_URL} target="_blank" rel="noopener noreferrer"
-            onClick={() => trackEvent("consult_click", { location: "mobile_footer", top1: top?.key, top2: second?.key })}
-            className="pointer-events-auto block w-full px-4 py-3 rounded-2xl text-center text-white bg-emerald-600 shadow-xl"
-          >無料で専門家に相談する</a>
+            href={APPOINTMENT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() =>
+              trackEvent("consult_click", { location: "mobile_footer", top1: top?.key, top2: second?.key })
+            }
+            className="pointer-events-auto inline-flex items-center justify-center w-full px-5 py-3 rounded-full bg-emerald-600 text-white text-sm font-medium shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+          >
+            無料で専門家に相談する
+          </a>
         </div>
       </div>
 

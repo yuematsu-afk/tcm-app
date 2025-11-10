@@ -22,8 +22,8 @@ export default function PharmacistCard({ data }: Props) {
   return (
     <article
       className="
-        group relative overflow-hidden rounded-2xl border bg-white shadow-sm
-        transition hover:shadow-lg hover:-translate-y-0.5
+        group relative overflow-hidden rounded-2xl border border-slate-100 bg-white
+        shadow-sm hover:shadow-md hover:-translate-y-0.5 transition
       "
     >
       {/* 上部：写真 + 名前 */}
@@ -121,7 +121,7 @@ export default function PharmacistCard({ data }: Props) {
             }}
             className="
               inline-flex items-center justify-center w-full
-              rounded-xl bg-emerald-600 text-white text-sm font-medium
+              rounded-full bg-emerald-600 text-white text-sm font-medium
               px-4 py-3 shadow-sm
               hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/60
               transition
